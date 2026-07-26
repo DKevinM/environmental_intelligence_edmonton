@@ -1,0 +1,65 @@
+project:
+  name: Edmonton Folk Music Festival Environmental Intelligence
+  timezone: America/Edmonton
+
+data_mode: auto
+
+event:
+  name: Edmonton Folk Music Festival
+  venue: Gallagher Park
+  latitude: 53.5352
+  longitude: -113.4787
+  local_radius_km: 10
+  influence_radius_km: 20
+  dates: "August 6-9, 2026"
+
+weather:
+  forecast_hours: 24
+  timeout_seconds: 20
+
+air_quality:
+  current_source: "/opt/airquality/github/AB_datapull/data/output/aqhi_station_forecast_3h.csv"
+  forecast_source: "/opt/airquality/github/AB_datapull/data/output/aqhi_station_forecast_3h.csv"
+  blend_grid_file: "/opt/airquality/github/AB_datapull/data/output/AQHI_Alberta_blend.geojson"
+  pollutant_source: "/opt/airquality/github/AB_datapull/data/last6h.csv"
+  purpleair_source: "/opt/airquality/github/AB_datapull/data/AB_PM25_map.json"
+  firesmoke_current_file: "/opt/airquality/github/AB_datapull/data/output/firesmoke_now.geojson"
+  search_radius_km: 30
+  fallback_current_file: data/sample/aqhi_current.geojson
+  fallback_forecast_file: data/sample/aqhi_forecast.json
+
+map:
+  half_degree_bbox: 0.6
+  purpleair_radius_km: 25
+  station_radius_km: 40
+
+# FIRMS_API_KEY must be set as an environment variable (see /opt/airquality/config/intelligence.env),
+# never committed here - this repo is public.
+firms:
+  base_url: "https://firms.modaps.eosdis.nasa.gov"
+  source: "VIIRS_SNPP_NRT"
+  radius_km: 300
+  cluster_km: 10
+  min_confidence: 0.30
+  day_range: 2
+
+cameras:
+  base_url: "https://511.alberta.ca/api/v2/get/cameras"
+  radius_km: 15
+  max_cameras: 4
+
+# Runs the AB_winds back-trajectory model locally (Supabase-fed HRDPS wind data).
+# SUPABASE_URL / SUPABASE_SERVICE_KEY come from the environment (intelligence.env), not here.
+wind_trajectory:
+  ab_winds_dir: "/opt/airquality/github/AB_winds"
+  python_bin: "/opt/airquality/venv/bin/python3"
+  hours: 6
+  timeout_seconds: 240
+  fire_path_threshold_km: 20
+
+thresholds:
+  heat: {moderate_c: 27, high_c: 30, extreme_c: 35}
+  wind_gust_kmh: {moderate: 45, high: 65, extreme: 90}
+  precipitation_probability: {moderate: 40, high: 70}
+  precipitation_mm_hour: {moderate: 2.5, high: 7.5}
+  aqhi: {moderate: 4, high: 7, extreme: 10.01}

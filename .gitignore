@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+output/*.json
+output/*.html
+output/*.log
+output/wind_trajectory/
+!output/.gitkeep
+.claude/
