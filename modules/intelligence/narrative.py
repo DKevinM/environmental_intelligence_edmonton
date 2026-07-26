@@ -56,4 +56,4 @@ def build(cfg,w,aq,fx,a,fire=None,trajectory=None,wx_alerts=None):
   rec.append(f"Environment Canada AQHI guidance — general population: {aqmsg['general']}")
   rec.append(f"Environment Canada AQHI guidance — at-risk populations: {aqmsg['at_risk']}")
  if not rec:rec=['Continue routine monitoring and rerun as new observations arrive.']
- return {'headline':headline,'summary':' '.join(parts),'recommendations':rec}
+ return {'headline':headline,'summary':' '.join(parts),'summary_points':parts,'recommendations':rec}
