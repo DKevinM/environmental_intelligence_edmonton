@@ -13,6 +13,10 @@ event:
   influence_radius_km: 20
   dates: "August 6-9, 2026"
 
+contact:
+  name: "Gary Redmond, ACA Executive Director"
+  phone: "780.935.4279"
+
 weather:
   forecast_hours: 24
   timeout_seconds: 20

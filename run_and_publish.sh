@@ -19,11 +19,12 @@ mkdir -p "$(dirname "$LOCKFILE")"
 python run_demo.py
 
 cp output/dashboard.html docs/index.html
+cp output/sitrep.pdf docs/sitrep.pdf
 
 (
   flock -w 120 200
 
-  git add docs/index.html
+  git add docs/index.html docs/sitrep.pdf
 
   if git diff --cached --quiet; then
       echo "No changes to commit."

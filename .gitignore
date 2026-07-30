@@ -4,6 +4,7 @@ __pycache__/
 output/*.json
 output/*.html
 output/*.log
+output/*.pdf
 output/wind_trajectory/
 !output/.gitkeep
 .claude/

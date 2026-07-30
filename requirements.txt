@@ -1,2 +1,4 @@
 requests>=2.31,<3
 PyYAML>=6.0,<7
+weasyprint>=69,<70
+qrcode[pil]>=8,<9
