@@ -62,8 +62,9 @@ def build_html(cfg,p):
  if a['hazards']['air_quality']['risk'] in ('HIGH','EXTREME'):smoke_note='<p style="color:#e8590c"><strong>Note:</strong> the sky-condition column below comes from the weather model and does not detect wildfire smoke or haze — it can read "Clear sky" during a smoke event. Refer to the Overall risk and Air Quality readings above for actual air quality.</p>'
  rec=''.join(f'<li>{escape(x)}</li>' for x in n['recommendations'])
  summary_bullets=''.join(f'<li>{escape(x)}</li>' for x in n.get('summary_points') or [n['summary']])
- blend=aq.get('blend') or {}; pollutant=aq.get('pollutant') or {}; pa=aq.get('purpleair') or {}
+ blend=aq.get('blend') or {}; pollutant=aq.get('pollutant') or {}; pa=aq.get('purpleair') or {}; official=aq.get('official') or {}
  extra=''
+ if official.get('status')=='ok':extra+=f"<div>Official AQHI ({escape(str(official.get('community','')))})<b>{v(cap_aqhi(official.get('aqhi')))}</b><small>Gov't of Alberta · tonight {escape(str(official.get('forecast_tonight') or '—'))} · tmrw {escape(str(official.get('forecast_tomorrow') or '—'))}</small></div>"
  if blend.get('status')=='ok':extra+=f"<div>Blend estimate<b>{v(cap_aqhi(blend.get('value')))}</b><small>confidence {escape(str(blend.get('confidence','—')))}</small></div>"
  if pollutant.get('status')=='ok':extra+=f"<div>PM2.5 (station)<b>{v(pollutant.get('value'),' µg/m³')}</b><small>{escape(str(pollutant.get('station_name','')))} · {v(pollutant.get('distance_km'),' km')}</small></div>"
  if pa.get('status')=='ok':extra+=f"<div>PM2.5 (community)<b>{v(pa.get('pm25'),' µg/m³')}</b><small>{escape(str(pa.get('name','')))} · {v(pa.get('distance_km'),' km')}</small></div>"

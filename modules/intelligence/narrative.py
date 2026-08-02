@@ -12,6 +12,8 @@ def build(cfg,w,aq,fx,a,fire=None,trajectory=None,wx_alerts=None):
  if wx:parts.append(f"Environment Canada has {len(wx)} active alert(s) in effect for the venue: {', '.join(sorted(set(x['name'] for x in wx)))}.")
  tz=cfg['project'].get('timezone','America/Edmonton')
  parts.append(f"The nearest current AQHI is {faqhi(aq.get('aqhi'))} at {aq.get('station_name','the nearest point')}, {f(aq.get('distance_km'),1)} km from the venue." if aq.get('aqhi') is not None else 'A valid current AQHI was not available.')
+ official=aq.get('official') or {}
+ if official.get('status')=='ok':parts.append(f"The official Government of Alberta AQHI for {official.get('community')} is {faqhi(official.get('aqhi'))} (forecast tonight: {official.get('forecast_tonight') or 'n/a'}, tomorrow: {official.get('forecast_tomorrow') or 'n/a'}).")
  blend=aq.get('blend') or {}
  if blend.get('status')=='ok' and blend.get('value') is not None:parts.append(f"A gridded AQHI estimate blending official and community sensors (confidence: {blend.get('confidence','unknown')}) puts the area near {faqhi(blend.get('value'))}.")
  pollutant=aq.get('pollutant') or {}
@@ -50,6 +52,7 @@ def build(cfg,w,aq,fx,a,fire=None,trajectory=None,wx_alerts=None):
  if h['heat']['risk'] in ('HIGH','EXTREME'):rec.append('Increase hydration, shade, cooling and heat-illness messaging.')
  if h['wind']['risk'] in ('HIGH','EXTREME'):rec.append('Review temporary structures, signage and stage wind limits.')
  if h['precipitation']['risk'] in ('HIGH','EXTREME'):rec.append('Prepare drainage, electrical protection and wet-weather controls.')
+ if h['wind_shear']['risk'] in ('HIGH','EXTREME'):rec.append('Surface and upper-level winds are diverging sharply — expect smoke/plume transport direction to differ from surface wind and reassess more frequently.')
  if wx:rec.append(f"Active Environment Canada alert(s) for the venue — review details: {', '.join(sorted(set(x['name'] for x in wx)))}.")
  aqmsg=eccc_messages(h['air_quality']['risk'])
  if aqmsg:
