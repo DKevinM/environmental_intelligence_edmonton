@@ -65,10 +65,6 @@ def radar_bucket(km, prev_bucket=None):
     return 'near' if km < 10 else 'far'
 
 
-PUBLISH_HEARTBEAT_SECONDS = 900  # republish at least this often even with no change
-MIN_PUBLISH_INTERVAL_SECONDS = 300  # ...but never more often than this, even with a real change
-
-
 def load_published():
     if PUBLIC_STATUS_FILE.exists():
         try:
@@ -121,46 +117,24 @@ def main():
         f'Active EC alerts: {", ".join(current_alert_names) or "none"}\n'
     )
 
-    # Only rewrite (and let watch.sh commit/push) docs/watch_status.json when
-    # something a viewer would actually see has changed, or on a coarse
-    # heartbeat — and even then, never more than once per
-    # MIN_PUBLISH_INTERVAL_SECONDS. Every run has a fresh timestamp, so
-    # diffing the whole file would always look "changed" and push to GitHub
-    # Pages every minute — which is exactly what caused the Pages build
-    # failures (Pages isn't built for per-minute republishing, and burns
-    # through the account's Actions-backed Pages-deployment runs to boot;
-    # most of those builds just errored). Being slower to reach the public
-    # page matters far less than not doing that again — the local alert
-    # log above (for actual ops monitoring) is unaffected and stays
-    # immediate regardless of any of this.
+    # Always write fresh — this file is served in real time via the
+    # Kamatera Cloudflare Tunnel (status.krmenvironmental.com/folk-fest/),
+    # which involves no git commit and no GitHub Pages build at all, so
+    # there's no reason to throttle the write itself. GitHub Pages
+    # protection (see watch.sh) is a separate, coarser gate applied only to
+    # when this same file gets committed/pushed to the git-backed copy —
+    # that's what caused the earlier Pages build failures, not this write.
     prev_published = load_published()
     prev_radar_bucket = (prev_published or {}).get('radar', {}).get('bucket')
     new_radar_bucket = radar_bucket(radar.get('nearest_km'), prev_radar_bucket)
-    prev_checked = (prev_published or {}).get('checked_at_utc')
-    elapsed = None
-    if prev_checked:
-        try:
-            elapsed = (datetime.now(timezone.utc) - datetime.fromisoformat(prev_checked)).total_seconds()
-        except ValueError:
-            elapsed = None
-    heartbeat_due = elapsed is None or elapsed >= PUBLISH_HEARTBEAT_SECONDS
-    min_interval_ok = elapsed is None or elapsed >= MIN_PUBLISH_INTERVAL_SECONDS
-    semantic_changed = (
-        prev_published is None
-        or prev_published.get('lightning', {}).get('band') != new_band
-        or new_radar_bucket != prev_radar_bucket
-        or sorted(prev_published.get('ec_alerts', [])) != sorted(current_alert_names)
-    )
-    should_publish = heartbeat_due or (semantic_changed and min_interval_ok)
 
-    if should_publish:
-        PUBLIC_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        PUBLIC_STATUS_FILE.write_text(json.dumps({
-            'checked_at_utc': now,
-            'lightning': {'band': new_band, 'nearest_km': lightning.get('nearest_km')},
-            'radar': {'nearest_km': radar.get('nearest_km'), 'bucket': new_radar_bucket},
-            'ec_alerts': current_alert_names,
-        }))
+    PUBLIC_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    PUBLIC_STATUS_FILE.write_text(json.dumps({
+        'checked_at_utc': now,
+        'lightning': {'band': new_band, 'nearest_km': lightning.get('nearest_km')},
+        'radar': {'nearest_km': radar.get('nearest_km'), 'bucket': new_radar_bucket},
+        'ec_alerts': current_alert_names,
+    }))
 
     save_state({'lightning_band': new_band, 'alert_names': current_alert_names})
 
