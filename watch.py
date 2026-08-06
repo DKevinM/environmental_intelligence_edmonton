@@ -51,15 +51,22 @@ def save_state(state):
     STATE_FILE.write_text(json.dumps(state))
 
 
-def radar_bucket(km):
-    """Matches the <10km/>=10km/none split the dashboard widget displays —
-    used here so publishing is gated on a visible change, not raw noise."""
+def radar_bucket(km, prev_bucket=None):
+    """<10km/>=10km/none, with hysteresis: a reading has to clearly cross
+    (8km one way, 12km the other) to flip, not just brush the 10km line —
+    otherwise noise right at the boundary flips the bucket back and forth,
+    and each flip counts as a 'real' change worth publishing."""
     if km is None:
         return 'none'
+    if prev_bucket == 'near' and km < 12:
+        return 'near'
+    if prev_bucket == 'far' and km >= 8:
+        return 'far'
     return 'near' if km < 10 else 'far'
 
 
-PUBLISH_HEARTBEAT_SECONDS = 600  # republish at least this often even with no change
+PUBLISH_HEARTBEAT_SECONDS = 900  # republish at least this often even with no change
+MIN_PUBLISH_INTERVAL_SECONDS = 300  # ...but never more often than this, even with a real change
 
 
 def load_published():
@@ -116,35 +123,42 @@ def main():
 
     # Only rewrite (and let watch.sh commit/push) docs/watch_status.json when
     # something a viewer would actually see has changed, or on a coarse
-    # heartbeat. Every run has a fresh timestamp, so diffing the whole file
-    # would always look "changed" and push to GitHub Pages every minute —
-    # which is exactly what caused the Pages build failures (Pages isn't
-    # built for per-minute republishing; most of those builds just errored).
+    # heartbeat — and even then, never more than once per
+    # MIN_PUBLISH_INTERVAL_SECONDS. Every run has a fresh timestamp, so
+    # diffing the whole file would always look "changed" and push to GitHub
+    # Pages every minute — which is exactly what caused the Pages build
+    # failures (Pages isn't built for per-minute republishing, and burns
+    # through the account's Actions-backed Pages-deployment runs to boot;
+    # most of those builds just errored). Being slower to reach the public
+    # page matters far less than not doing that again — the local alert
+    # log above (for actual ops monitoring) is unaffected and stays
+    # immediate regardless of any of this.
     prev_published = load_published()
-    new_radar_bucket = radar_bucket(radar.get('nearest_km'))
-    prev_radar_bucket = radar_bucket((prev_published or {}).get('radar', {}).get('nearest_km'))
+    prev_radar_bucket = (prev_published or {}).get('radar', {}).get('bucket')
+    new_radar_bucket = radar_bucket(radar.get('nearest_km'), prev_radar_bucket)
     prev_checked = (prev_published or {}).get('checked_at_utc')
-    heartbeat_due = True
+    elapsed = None
     if prev_checked:
         try:
-            age = (datetime.now(timezone.utc) - datetime.fromisoformat(prev_checked)).total_seconds()
-            heartbeat_due = age >= PUBLISH_HEARTBEAT_SECONDS
+            elapsed = (datetime.now(timezone.utc) - datetime.fromisoformat(prev_checked)).total_seconds()
         except ValueError:
-            heartbeat_due = True
-    should_publish = (
+            elapsed = None
+    heartbeat_due = elapsed is None or elapsed >= PUBLISH_HEARTBEAT_SECONDS
+    min_interval_ok = elapsed is None or elapsed >= MIN_PUBLISH_INTERVAL_SECONDS
+    semantic_changed = (
         prev_published is None
         or prev_published.get('lightning', {}).get('band') != new_band
         or new_radar_bucket != prev_radar_bucket
         or sorted(prev_published.get('ec_alerts', [])) != sorted(current_alert_names)
-        or heartbeat_due
     )
+    should_publish = heartbeat_due or (semantic_changed and min_interval_ok)
 
     if should_publish:
         PUBLIC_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
         PUBLIC_STATUS_FILE.write_text(json.dumps({
             'checked_at_utc': now,
             'lightning': {'band': new_band, 'nearest_km': lightning.get('nearest_km')},
-            'radar': {'nearest_km': radar.get('nearest_km')},
+            'radar': {'nearest_km': radar.get('nearest_km'), 'bucket': new_radar_bucket},
             'ec_alerts': current_alert_names,
         }))
 

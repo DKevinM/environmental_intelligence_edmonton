@@ -77,10 +77,14 @@ def build_html(cfg,p):
     var bandClass={CLEAR:'low',DETECTED_FAR:'moderate',WATCH:'high',SHELTER:'extreme'}[d.lightning.band]||'unknown';
     var lightningVal=d.lightning.nearest_km!=null?d.lightning.nearest_km+' km':'—';
     var radarKm=d.radar.nearest_km;
-    var radarClass=(radarKm!=null&&radarKm<10)?'moderate':'low';
+    // Prefer the server's hysteresis-aware bucket so what's displayed always
+    // matches what actually triggered the publish; fall back to a plain
+    // threshold only for older cached JSON that predates the bucket field.
+    var radarBucket=d.radar.bucket||(radarKm==null?'none':(radarKm<10?'near':'far'));
+    var radarClass=radarBucket==='near'?'moderate':'low';
     var radarBig,radarSmall;
-    if(radarKm==null){radarBig='None';radarSmall='within 40km';}
-    else if(radarKm<10){radarBig='<10km';radarSmall='from venue';}
+    if(radarBucket==='none'){radarBig='None';radarSmall='within 40km';}
+    else if(radarBucket==='near'){radarBig='<10km';radarSmall='from venue';}
     else{radarBig='≥10km';radarSmall='from venue';}
     var alertCount=(d.ec_alerts||[]).length;
     var alertNames=alertCount?d.ec_alerts.join(', '):'none active';
