@@ -76,13 +76,18 @@ def build_html(cfg,p):
   function render(d){
     var bandClass={CLEAR:'low',DETECTED_FAR:'moderate',WATCH:'high',SHELTER:'extreme'}[d.lightning.band]||'unknown';
     var lightningVal=d.lightning.nearest_km!=null?d.lightning.nearest_km+' km':'—';
-    var radarVal=d.radar.nearest_km!=null?d.radar.nearest_km+' km':'—';
+    var radarKm=d.radar.nearest_km;
+    var radarClass=(radarKm!=null&&radarKm<10)?'moderate':'low';
+    var radarBig,radarSmall;
+    if(radarKm==null){radarBig='None';radarSmall='within 40km';}
+    else if(radarKm<10){radarBig='<10km';radarSmall='from venue';}
+    else{radarBig='≥10km';radarSmall='from venue';}
     var alertCount=(d.ec_alerts||[]).length;
     var alertNames=alertCount?d.ec_alerts.join(', '):'none active';
     var checked=new Date(d.checked_at_utc).toLocaleTimeString();
     el.innerHTML='<div class="grid hazards">'
       +'<article class="hazard '+bandClass+'"><small>Lightning</small><b>'+d.lightning.band+'</b><span>'+lightningVal+' from venue</span></article>'
-      +'<article class="hazard low"><small>Radar echo</small><b>'+radarVal+'</b><span>from venue</span></article>'
+      +'<article class="hazard '+radarClass+'"><small>Radar echo</small><b>'+radarBig+'</b><span>'+radarSmall+'</span></article>'
       +'<article class="hazard '+(alertCount?'high':'low')+'"><small>Active EC alerts</small><b>'+alertCount+'</b><span>'+alertNames+'</span></article>'
       +'</div><p style="font-size:12px;color:#9fb0bf;margin:8px 0 0">Checked '+checked+' local time — refreshes automatically every 30s while this page is open.</p>';
   }
