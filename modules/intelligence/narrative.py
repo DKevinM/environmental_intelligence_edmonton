@@ -53,6 +53,7 @@ def build(cfg,w,aq,fx,a,fire=None,trajectory=None,wx_alerts=None):
  if h['wind']['risk'] in ('HIGH','EXTREME'):rec.append('Review temporary structures, signage and stage wind limits.')
  if h['precipitation']['risk'] in ('HIGH','EXTREME'):rec.append('Prepare drainage, electrical protection and wet-weather controls.')
  if h['wind_shear']['risk'] in ('HIGH','EXTREME'):rec.append('Surface and upper-level winds are diverging sharply — expect smoke/plume transport direction to differ from surface wind and reassess more frequently.')
+ if h['aqhi_rate_of_change']['risk'] in ('HIGH','EXTREME'):rec.append('AQHI is rising quickly — conditions may be worse than the current reading by the next set change; recheck shortly before proceeding with outdoor activity decisions.')
  if wx:rec.append(f"Active Environment Canada alert(s) for the venue — review details: {', '.join(sorted(set(x['name'] for x in wx)))}.")
  aqmsg=eccc_messages(h['air_quality']['risk'])
  if aqmsg:

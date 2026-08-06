@@ -15,6 +15,10 @@ def assess(cfg,w,aq,fx,shear=None):
     rain=top(level(s.get('max_precipitation_probability_pct'),t['precipitation_probability']['moderate'],t['precipitation_probability']['high']),level(s.get('max_hourly_precipitation_mm'),t['precipitation_mm_hour']['moderate'],t['precipitation_mm_hour']['high']))
     av=max([v for v in (aq.get('aqhi'),fx.get('plus_3h')) if v is not None],default=None); air=level(av,t['aqhi']['moderate'],t['aqhi']['high'],t['aqhi']['extreme']); thunder='HIGH' if s['thunderstorm_possible'] else ('MODERATE' if (s.get('max_precipitation_probability_pct') or 0)>=60 and (gust or 0)>=45 else 'LOW')
     hazards={'air_quality':{'risk':air,'indicator':av,'unit':'AQHI'},'heat':{'risk':heat,'indicator':heatv,'unit':'°C apparent/humidex'},'wind':{'risk':wind,'indicator':gust,'unit':'km/h peak gust'},'precipitation':{'risk':rain,'indicator':s.get('max_hourly_precipitation_mm'),'unit':'mm/h maximum'},'thunderstorm':{'risk':thunder,'indicator':format_short(s.get('first_thunderstorm_hour'),cfg['project'].get('timezone','America/Edmonton')),'unit':'first forecast signal'}}
+    # AQHI rate-of-change: only a rising AQHI is a hazard signal, a falling/flat one is not
+    tr=t.get('aqhi_rate',{'moderate':1.0,'high':2.0,'extreme':3.0}); rate1h=aq.get('aqhi_change_1h')
+    rate_risk='UNKNOWN' if rate1h is None else ('LOW' if rate1h<=0 else level(rate1h,tr['moderate'],tr['high'],tr['extreme']))
+    hazards['aqhi_rate_of_change']={'risk':rate_risk,'indicator':rate1h,'unit':'AQHI change/hour'}
     # Wind shear: surface vs upper-level HRDPS wind direction divergence (see modules/wind_shear)
     shear=shear or {}; ts=t.get('wind_shear',{'moderate':45,'high':90,'extreme':135})
     hazards['wind_shear']={'risk':level(shear.get('direction_diff_deg'),ts['moderate'],ts['high'],ts['extreme']),'indicator':shear.get('direction_diff_deg'),'unit':f"° direction diff ({shear.get('low_level_m',10)}m vs {shear.get('high_level_m',120)}m)"}

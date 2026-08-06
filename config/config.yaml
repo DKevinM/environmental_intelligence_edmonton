@@ -70,4 +70,5 @@ thresholds:
   precipitation_probability: {moderate: 40, high: 70}
   precipitation_mm_hour: {moderate: 2.5, high: 7.5}
   aqhi: {moderate: 4, high: 7, extreme: 10.01}
+  aqhi_rate: {moderate: 1.0, high: 2.0, extreme: 3.0}
   wind_shear: {moderate: 45, high: 90, extreme: 135}

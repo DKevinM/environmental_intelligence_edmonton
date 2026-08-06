@@ -1,4 +1,5 @@
 import requests
+from datetime import datetime,timedelta
 from core.config import resolve_path
 from core.geometry import haversine_km,bearing_deg,compass
 from core.io import read_structured_source
@@ -45,6 +46,35 @@ def load(cfg,key,fallback):
         except:
             if mode=='live':raise
     s=str(resolve_path(cfg,fallback)); return read_structured_source(s),s,True
+def compute_aqhi_change(cfg,station_name):
+    """
+    aqhi_station_forecast_3h.csv (this repo's current_source) is a single
+    snapshot with no history of its own, unlike SK_datapull's current feed
+    (which carries pre-computed AQHI_change_1h/3h). Alberta has no equivalent
+    upstream, so compute the same "current minus ~N hours ago" change here,
+    from the same last6h.csv feed load_nearest_pollutant already reads.
+    """
+    path=cfg['air_quality'].get('pollutant_source')
+    if not path or not station_name:return None,None
+    try:rows=read_structured_source(str(resolve_path(cfg,path)))
+    except Exception:return None,None
+    readings=[]
+    for r in rows:
+        if (r.get('ParameterName') or '')!='':continue
+        if r.get('StationName')!=station_name:continue
+        v=num(r.get('Value'))
+        if v is None:continue
+        try:dt=datetime.fromisoformat(r.get('ReadingDate'))
+        except (TypeError,ValueError):continue
+        readings.append((dt,v))
+    if len(readings)<2:return None,None
+    readings.sort(key=lambda x:x[0]); latest_dt,latest_v=readings[-1]
+    def value_near(hours_ago):
+        target=latest_dt-timedelta(hours=hours_ago)
+        closest=min(readings,key=lambda x:abs((x[0]-target).total_seconds()))
+        return closest[1] if abs((closest[0]-target).total_seconds())<=1800 else None
+    v1=value_near(1); v3=value_near(3)
+    return (round(latest_v-v1,1) if v1 is not None else None),(round(latest_v-v3,1) if v3 is not None else None)
 def load_current_aqhi(cfg):
     aq=cfg['air_quality']; data,src,fb=load(cfg,'current_source',aq['fallback_current_file']); e=cfg['event']; cand=[]
     for r in records(data):
@@ -54,7 +84,9 @@ def load_current_aqhi(cfg):
             if d<=float(aq.get('search_radius_km',30)):cand.append((d,r,v,la,lo))
     if not cand:return {'status':'missing','source':src,'fallback':fb,'aqhi':None}
     d,r,v,la,lo=min(cand,key=lambda x:x[0]); b=bearing_deg(float(e['latitude']),float(e['longitude']),la,lo)
-    return {'status':'ok','source':src,'fallback':fb,'aqhi':round(v,1),'station_name':first(r,STATION) or 'Nearest AQHI point','timestamp':first(r,TIME),'distance_km':round(d,2),'direction':compass(b)}
+    station_name=first(r,STATION) or 'Nearest AQHI point'
+    change_1h,change_3h=compute_aqhi_change(cfg,station_name)
+    return {'status':'ok','source':src,'fallback':fb,'aqhi':round(v,1),'station_name':station_name,'timestamp':first(r,TIME),'distance_km':round(d,2),'direction':compass(b),'aqhi_change_1h':change_1h,'aqhi_change_3h':change_3h}
 def load_forecast_aqhi(cfg):
     aq=cfg['air_quality']; e=cfg['event']; data,src,fb=load(cfg,'forecast_source',aq['fallback_forecast_file']); cand=[]
     for r in records(data):
