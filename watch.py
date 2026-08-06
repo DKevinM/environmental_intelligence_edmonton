@@ -51,6 +51,26 @@ def save_state(state):
     STATE_FILE.write_text(json.dumps(state))
 
 
+def radar_bucket(km):
+    """Matches the <10km/>=10km/none split the dashboard widget displays —
+    used here so publishing is gated on a visible change, not raw noise."""
+    if km is None:
+        return 'none'
+    return 'near' if km < 10 else 'far'
+
+
+PUBLISH_HEARTBEAT_SECONDS = 600  # republish at least this often even with no change
+
+
+def load_published():
+    if PUBLIC_STATUS_FILE.exists():
+        try:
+            return json.loads(PUBLIC_STATUS_FILE.read_text())
+        except Exception:
+            pass
+    return None
+
+
 def log_alert(msg):
     now = datetime.now(timezone.utc).isoformat(timespec='seconds')
     with ALERT_LOG.open('a') as f:
@@ -94,13 +114,39 @@ def main():
         f'Active EC alerts: {", ".join(current_alert_names) or "none"}\n'
     )
 
-    PUBLIC_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    PUBLIC_STATUS_FILE.write_text(json.dumps({
-        'checked_at_utc': now,
-        'lightning': {'band': new_band, 'nearest_km': lightning.get('nearest_km')},
-        'radar': {'nearest_km': radar.get('nearest_km')},
-        'ec_alerts': current_alert_names,
-    }))
+    # Only rewrite (and let watch.sh commit/push) docs/watch_status.json when
+    # something a viewer would actually see has changed, or on a coarse
+    # heartbeat. Every run has a fresh timestamp, so diffing the whole file
+    # would always look "changed" and push to GitHub Pages every minute —
+    # which is exactly what caused the Pages build failures (Pages isn't
+    # built for per-minute republishing; most of those builds just errored).
+    prev_published = load_published()
+    new_radar_bucket = radar_bucket(radar.get('nearest_km'))
+    prev_radar_bucket = radar_bucket((prev_published or {}).get('radar', {}).get('nearest_km'))
+    prev_checked = (prev_published or {}).get('checked_at_utc')
+    heartbeat_due = True
+    if prev_checked:
+        try:
+            age = (datetime.now(timezone.utc) - datetime.fromisoformat(prev_checked)).total_seconds()
+            heartbeat_due = age >= PUBLISH_HEARTBEAT_SECONDS
+        except ValueError:
+            heartbeat_due = True
+    should_publish = (
+        prev_published is None
+        or prev_published.get('lightning', {}).get('band') != new_band
+        or new_radar_bucket != prev_radar_bucket
+        or sorted(prev_published.get('ec_alerts', [])) != sorted(current_alert_names)
+        or heartbeat_due
+    )
+
+    if should_publish:
+        PUBLIC_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        PUBLIC_STATUS_FILE.write_text(json.dumps({
+            'checked_at_utc': now,
+            'lightning': {'band': new_band, 'nearest_km': lightning.get('nearest_km')},
+            'radar': {'nearest_km': radar.get('nearest_km')},
+            'ec_alerts': current_alert_names,
+        }))
 
     save_state({'lightning_band': new_band, 'alert_names': current_alert_names})
 
