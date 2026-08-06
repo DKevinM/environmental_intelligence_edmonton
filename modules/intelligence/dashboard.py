@@ -71,7 +71,7 @@ def build_html(cfg,p):
  if pa.get('status')=='ok':extra+=f"<div>PM2.5 (community)<b>{v(pa.get('pm25'),' µg/m³')}</b><small>{escape(str(pa.get('name','')))} · {v(pa.get('distance_km'),' km')}</small></div>"
  extra_section=f'<section class="panel"><h2>Local air quality readings</h2><div class="aq">{extra}</div></section>' if extra else ''
  valid_label=format_short(fx.get('valid_at'),tz) or '+3h'
- livewatch_section='''<section class="panel" id="livewatch" style="border-color:#4dabf7"><h2>Live severe-weather watch <small style="font-weight:normal;font-size:13px;color:#9fb0bf">(updates every minute — independent of the rest of this report, which refreshes every 30 min)</small></h2><div id="livewatch-body">Loading live status…</div></section><script>(function(){
+ livewatch_section='''<section class="panel" id="livewatch" style="border-color:#4dabf7"><h2>Live severe-weather watch <small style="font-weight:normal;font-size:13px;color:#9fb0bf">(published when something changes, at least every 15 min — independent of the rest of this report, which refreshes every 30 min)</small></h2><div id="livewatch-body">Loading live status…</div></section><script>(function(){
   var el=document.getElementById('livewatch-body');
   function render(d){
     var bandClass={CLEAR:'low',DETECTED_FAR:'moderate',WATCH:'high',SHELTER:'extreme'}[d.lightning.band]||'unknown';
@@ -93,7 +93,7 @@ def build_html(cfg,p):
       +'<article class="hazard '+bandClass+'"><small>Lightning</small><b>'+d.lightning.band+'</b><span>'+lightningVal+' from venue</span></article>'
       +'<article class="hazard '+radarClass+'"><small>Radar echo</small><b>'+radarBig+'</b><span>'+radarSmall+'</span></article>'
       +'<article class="hazard '+(alertCount?'high':'low')+'"><small>Active EC alerts</small><b>'+alertCount+'</b><span>'+alertNames+'</span></article>'
-      +'</div><p style="font-size:12px;color:#9fb0bf;margin:8px 0 0">Checked '+checked+' local time — refreshes automatically every 30s while this page is open.</p>';
+      +'</div><p style="font-size:12px;color:#9fb0bf;margin:8px 0 0">Checked '+checked+' local time — this panel re-checks every 30s, but the status itself only changes when conditions do (at least every 15 min).</p>';
   }
   function load(){
     fetch('watch_status.json?t='+Date.now()).then(function(r){return r.json();}).then(render).catch(function(){
