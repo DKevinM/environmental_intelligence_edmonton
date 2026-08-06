@@ -5,6 +5,7 @@ from core.aqhi import cap as cap_aqhi
 from core.geometry import compass
 from modules.weather.codes import label as weather_label
 R={'LOW':'low','MODERATE':'moderate','HIGH':'high','EXTREME':'extreme','UNKNOWN':'unknown'}
+HAZARD_LABELS={'aqhi_rate_of_change':'AQHI Rate of Change'}
 def v(x,s=''):return '—' if x is None else f'{x}{s}'
 MAP_JS='''(function(){
   var map=L.map('festmap',{scrollWheelZoom:false}).setView([VENUE.lat,VENUE.lon],13);
@@ -56,7 +57,7 @@ def build_html(cfg,p):
   wx_section='<section class="panel" style="border-color:#2f9e44"><p style="margin:0">✓ No active Environment Canada weather alerts for the venue.</p></section>'
  else:
   wx_section=f'<section class="panel" style="border-color:#e0a800"><p style="margin:0">⚠ Could not retrieve Environment Canada weather alerts{" (" + escape(str((p.get("wx_alerts") or {}).get("error"))) + ")" if (p.get("wx_alerts") or {}).get("error") else ""} — check manually before relying on this report.</p></section>'
- cards=''.join(f"<article class='hazard {R.get(x['risk'],'unknown')}'><small>{k.replace('_',' ').title()}</small><b>{x['risk']}</b><span>{v(cap_aqhi(x.get('indicator')) if k=='air_quality' else x.get('indicator'))} {x.get('unit','')}</span></article>" for k,x in a['hazards'].items())
+ cards=''.join(f"<article class='hazard {R.get(x['risk'],'unknown')}'><small>{HAZARD_LABELS.get(k,k.replace('_',' ').title())}</small><b>{x['risk']}</b><span>{v(cap_aqhi(x.get('indicator')) if k=='air_quality' else x.get('indicator'))} {x.get('unit','')}</span></article>" for k,x in a['hazards'].items())
  rows=''.join(f"<tr><td>{v(format_short(r.get('time'),tz))}</td><td>{v(r.get('temperature_c'),'°C')}</td><td>{v(r.get('precipitation_probability_pct'),'%')}</td><td>{v(r.get('precipitation_mm'),' mm')}</td><td>{v(r.get('wind_gust_kmh'),' km/h')}</td><td>{v(weather_label(r.get('weather_code')))}</td></tr>" for r in w.get('hourly',[])[:12])
  smoke_note=''
  if a['hazards']['air_quality']['risk'] in ('HIGH','EXTREME'):smoke_note='<p style="color:#e8590c"><strong>Note:</strong> the sky-condition column below comes from the weather model and does not detect wildfire smoke or haze — it can read "Clear sky" during a smoke event. Refer to the Overall risk and Air Quality readings above for actual air quality.</p>'
