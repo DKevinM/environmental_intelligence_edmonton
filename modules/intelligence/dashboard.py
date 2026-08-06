@@ -78,7 +78,7 @@ def build_html(cfg,p):
     var radarVal=d.radar.nearest_km!=null?d.radar.nearest_km+' km':'—';
     var alertCount=(d.ec_alerts||[]).length;
     var alertNames=alertCount?d.ec_alerts.join(', '):'none active';
-    var checked=new Date(d.checked_at_utc+'Z').toLocaleTimeString();
+    var checked=new Date(d.checked_at_utc).toLocaleTimeString();
     el.innerHTML='<div class="grid hazards">'
       +'<article class="hazard '+bandClass+'"><small>Lightning</small><b>'+d.lightning.band+'</b><span>'+lightningVal+' from venue</span></article>'
       +'<article class="hazard low"><small>Radar echo</small><b>'+radarVal+'</b><span>from venue</span></article>'
