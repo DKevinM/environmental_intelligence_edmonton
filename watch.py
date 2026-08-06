@@ -17,10 +17,17 @@ from modules.intelligence.fast_watch import check_lightning, check_radar_echo
 ALERT_LOG = Path('/opt/airquality/logs/sitrep_alerts.log')
 STATUS_FILE = Path('/opt/airquality/logs/folk_fest_watch_status.txt')
 STATE_FILE = ROOT / 'output' / 'watch_state.json'
-# Published alongside docs/index.html so the dashboard can fetch this
-# minute-fresh status client-side, instead of only being as fresh as the
-# last 30-minute full sit-rep regeneration.
-PUBLIC_STATUS_FILE = ROOT / 'docs' / 'watch_status.json'
+# Deliberately NOT inside docs/ (the git-tracked, GitHub-Pages-served
+# folder) — this gets written every single minute, and a file that changes
+# that often inside the repo left an uncommitted change sitting in the
+# working tree most of the time (watch.sh only commits it every 5 min),
+# which then blocked run_and_publish.sh's own `git pull --rebase` whenever
+# its 30-minute cycle landed mid-window. Writing here instead means git
+# never sees these per-minute writes at all. Served in real time by nginx
+# directly (see /etc/nginx/sites-available/dashboard-mirror.conf) via the
+# Cloudflare Tunnel; watch.sh separately copies this into docs/ on its own
+# throttled schedule for the git-backed/GitHub-Pages fallback copy.
+PUBLIC_STATUS_FILE = Path('/opt/airquality/live-status/edmonton_folk_fest_watch_status.json')
 
 LIGHTNING_SHELTER_KM = 10  # the "30-30 rule" shelter threshold
 LIGHTNING_WATCH_KM = 25
