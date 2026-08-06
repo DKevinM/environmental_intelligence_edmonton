@@ -17,6 +17,10 @@ from modules.intelligence.fast_watch import check_lightning, check_radar_echo
 ALERT_LOG = Path('/opt/airquality/logs/sitrep_alerts.log')
 STATUS_FILE = Path('/opt/airquality/logs/folk_fest_watch_status.txt')
 STATE_FILE = ROOT / 'output' / 'watch_state.json'
+# Published alongside docs/index.html so the dashboard can fetch this
+# minute-fresh status client-side, instead of only being as fresh as the
+# last 30-minute full sit-rep regeneration.
+PUBLIC_STATUS_FILE = ROOT / 'docs' / 'watch_status.json'
 
 LIGHTNING_SHELTER_KM = 10  # the "30-30 rule" shelter threshold
 LIGHTNING_WATCH_KM = 25
@@ -89,6 +93,14 @@ def main():
         f'Radar echo: {radar_note}\n'
         f'Active EC alerts: {", ".join(current_alert_names) or "none"}\n'
     )
+
+    PUBLIC_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    PUBLIC_STATUS_FILE.write_text(json.dumps({
+        'checked_at_utc': now,
+        'lightning': {'band': new_band, 'nearest_km': lightning.get('nearest_km')},
+        'radar': {'nearest_km': radar.get('nearest_km')},
+        'ec_alerts': current_alert_names,
+    }))
 
     save_state({'lightning_band': new_band, 'alert_names': current_alert_names})
 
