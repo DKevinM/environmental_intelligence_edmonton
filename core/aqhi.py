@@ -12,3 +12,18 @@ ECCC_MESSAGES={
 }
 def eccc_messages(risk):
     return ECCC_MESSAGES.get(risk)
+
+def risk_from_aqhi(v):
+    """Classify by the numeric AQHI value using Health Canada's own bands,
+    rather than trusting the AEP feed's HealthRisk field — that field has
+    been observed reporting 'Low' for an Aqhi of 4-5 (should be Moderate),
+    i.e. it can't be relied on to match its own number."""
+    if v is None:
+        return 'UNKNOWN'
+    if v <= 3:
+        return 'LOW'
+    if v <= 6:
+        return 'MODERATE'
+    if v <= 10:
+        return 'HIGH'
+    return 'EXTREME'

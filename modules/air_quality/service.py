@@ -3,6 +3,7 @@ from datetime import datetime,timedelta
 from core.config import resolve_path
 from core.geometry import haversine_km,bearing_deg,compass
 from core.io import read_structured_source
+from core.aqhi import risk_from_aqhi
 
 # Official Government of Alberta community AQHI feed — the same source
 # https://dkevinm.github.io/ACA_AQHI/ uses. More authoritative than the
@@ -18,7 +19,11 @@ def load_official_aqhi(cfg,community_name='Edmonton',timeout=20):
         return {'status':'error','error':f'{type(ex).__name__}: {ex}'}
     row=next((x for x in rows if x.get('CommunityName')==community_name),None)
     if not row:return {'status':'missing','reason':f'{community_name} not in AEPA feed'}
-    return {'status':'ok','community':community_name,'aqhi':num(row.get('Aqhi')),'forecast_today':row.get('ForecastToday'),'forecast_tonight':row.get('ForecastTonight'),'forecast_tomorrow':row.get('ForecastTomorrow'),'reading_date':row.get('ReadingDate'),'health_risk':row.get('HealthRisk'),'general_message':row.get('GeneralPopulationMessage'),'at_risk_message':row.get('AtRiskMessage')}
+    aqhi=num(row.get('Aqhi'))
+    # risk is classified from the numeric Aqhi ourselves — the feed's own
+    # HealthRisk/message fields have been observed not matching its own
+    # Aqhi number (e.g. HealthRisk "Low" at Aqhi 4-5), so they aren't used.
+    return {'status':'ok','community':community_name,'aqhi':aqhi,'forecast_today':row.get('ForecastToday'),'forecast_tonight':row.get('ForecastTonight'),'forecast_tomorrow':row.get('ForecastTomorrow'),'reading_date':row.get('ReadingDate'),'risk':risk_from_aqhi(aqhi)}
 AK=('AQHI','aqhi','value','Value','current_aqhi'); LAT=('latitude','lat','Latitude','LAT'); LON=('longitude','lon','lng','Longitude','LON')
 STATION=('station_name','name','station','StationName'); TIME=('timestamp','datetime','time','observed_at','ReadingDate')
 F3H=('aqhi_3h','AQHI_3H','aqhi_future_3h','forecast_3h','AQHI_forecast_3h','aqhi_forecast_3h')
