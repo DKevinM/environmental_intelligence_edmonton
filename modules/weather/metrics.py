@@ -7,6 +7,9 @@ def summarize(rows):
     def vs(k):return [r[k] for r in rows if r.get(k) is not None]
     def mx(k):
         x=vs(k); return max(x) if x else None
+    def mx_time(k):
+        pairs=[(r[k],r['time']) for r in rows if r.get(k) is not None]
+        return max(pairs,key=lambda p:p[0])[1] if pairs else None
     ts=[r['time'] for r in rows if r.get('weather_code') in THUNDER]
     rain=vs('precipitation_mm')
-    return {'max_temperature_c':mx('temperature_c'),'max_apparent_temperature_c':mx('apparent_temperature_c'),'max_precipitation_probability_pct':mx('precipitation_probability_pct'),'max_hourly_precipitation_mm':mx('precipitation_mm'),'total_precipitation_mm':round(sum(rain),1) if rain else None,'max_wind_gust_kmh':mx('wind_gust_kmh'),'thunderstorm_possible':bool(ts),'first_thunderstorm_hour':ts[0] if ts else None}
+    return {'max_temperature_c':mx('temperature_c'),'max_apparent_temperature_c':mx('apparent_temperature_c'),'max_precipitation_probability_pct':mx('precipitation_probability_pct'),'max_hourly_precipitation_mm':mx('precipitation_mm'),'max_hourly_precipitation_time':mx_time('precipitation_mm'),'total_precipitation_mm':round(sum(rain),1) if rain else None,'max_wind_gust_kmh':mx('wind_gust_kmh'),'thunderstorm_possible':bool(ts),'first_thunderstorm_hour':ts[0] if ts else None}
