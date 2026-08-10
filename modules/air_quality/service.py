@@ -3,7 +3,7 @@ from datetime import datetime,timedelta
 from core.config import resolve_path
 from core.geometry import haversine_km,bearing_deg,compass
 from core.io import read_structured_source
-from core.aqhi import risk_from_aqhi
+from core.aqhi import risk_from_aqhi,pm25_to_eaqhi
 
 # Official Government of Alberta community AQHI feed — the same source
 # https://dkevinm.github.io/ACA_AQHI/ uses. More authoritative than the
@@ -80,6 +80,28 @@ def compute_aqhi_change(cfg,station_name):
         return closest[1] if abs((closest[0]-target).total_seconds())<=1800 else None
     v1=value_near(1); v3=value_near(3)
     return (round(latest_v-v1,1) if v1 is not None else None),(round(latest_v-v3,1) if v3 is not None else None)
+def load_purpleair_eaqhi_estimate(cfg,n=3):
+    """Fail-safe for when official station AQHI is unavailable (e.g. an
+    Alberta Environment outage): average the n nearest PurpleAir sensors'
+    PM2.5 and convert to an eAQHI proxy via the same breakpoints SK_datapull
+    already uses. Clearly a lower-confidence estimate, not an official reading."""
+    path=cfg['air_quality'].get('purpleair_source')
+    if not path:return {'status':'missing'}
+    try:rows=read_structured_source(str(resolve_path(cfg,path)))
+    except Exception as ex:return {'status':'error','error':f'{type(ex).__name__}: {ex}'}
+    e=cfg['event']; lat,lon=float(e['latitude']),float(e['longitude']); radius=float(cfg['air_quality'].get('search_radius_km',30)); cand=[]
+    for r in rows:
+        if not r.get('use_for_map'):continue
+        la,lo=r.get('latitude'),r.get('longitude')
+        if la is None or lo is None:continue
+        pm=r.get('pm_corr') if r.get('pm_corr') is not None else r.get('pm2.5_atm')
+        if pm is None:continue
+        d=haversine_km(lat,lon,la,lo)
+        if d<=radius:cand.append((d,r,pm))
+    if not cand:return {'status':'missing'}
+    nearest=sorted(cand,key=lambda x:x[0])[:n]
+    avg_pm=sum(x[2] for x in nearest)/len(nearest)
+    return {'status':'ok','aqhi':pm25_to_eaqhi(avg_pm),'pm25_avg':round(avg_pm,1),'n_sensors':len(nearest),'sensor_names':[x[1].get('name') for x in nearest],'max_distance_km':round(nearest[-1][0],2)}
 def load_current_aqhi(cfg):
     aq=cfg['air_quality']; data,src,fb=load(cfg,'current_source',aq['fallback_current_file']); e=cfg['event']; cand=[]
     for r in records(data):
@@ -87,7 +109,11 @@ def load_current_aqhi(cfg):
         if v and la is not None and lo is not None:
             d=haversine_km(float(e['latitude']),float(e['longitude']),la,lo)
             if d<=float(aq.get('search_radius_km',30)):cand.append((d,r,v,la,lo))
-    if not cand:return {'status':'missing','source':src,'fallback':fb,'aqhi':None}
+    if not cand:
+        est=load_purpleair_eaqhi_estimate(cfg)
+        if est.get('status')=='ok':
+            return {'status':'estimated','source':src,'fallback':fb,'aqhi':est['aqhi'],'station_name':f"eAQHI estimate ({est['n_sensors']} nearby sensors)",'estimate':est}
+        return {'status':'missing','source':src,'fallback':fb,'aqhi':None}
     d,r,v,la,lo=min(cand,key=lambda x:x[0]); b=bearing_deg(float(e['latitude']),float(e['longitude']),la,lo)
     station_name=first(r,STATION) or 'Nearest AQHI point'
     change_1h,change_3h=compute_aqhi_change(cfg,station_name)
