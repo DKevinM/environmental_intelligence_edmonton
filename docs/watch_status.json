@@ -1,1 +1,1 @@
-{"checked_at_utc": "2026-08-10T22:23:02+00:00", "lightning": {"band": "DETECTED_FAR", "nearest_km": 31.5}, "radar": {"nearest_km": 10.0, "bucket": "near"}, "ec_alerts": []}
+{"checked_at_utc": "2026-08-10T22:29:02+00:00", "lightning": {"band": "DETECTED_FAR", "nearest_km": 31.5}, "radar": {"nearest_km": 10.1, "bucket": "near"}, "ec_alerts": []}
