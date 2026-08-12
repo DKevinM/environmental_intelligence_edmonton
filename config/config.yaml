@@ -12,6 +12,7 @@ event:
   local_radius_km: 10
   influence_radius_km: 20
   dates: "August 6-9, 2026"
+  concluded: true
 
 contact:
   name: "Gary Redmond, ACA Executive Director"
