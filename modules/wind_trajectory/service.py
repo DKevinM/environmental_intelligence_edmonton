@@ -33,9 +33,21 @@ def load_trajectory(cfg):
 def nearest_fire_on_path(centerlines,fire_hotspots):
     if not centerlines or not centerlines.get('features') or not fire_hotspots:return None
     coords=centerlines['features'][0]['geometry']['coordinates']
+    if len(coords)<2:return None
+    vlon,vlat=coords[0]  # track_center[0] in backtraj_core.py is t=0, i.e. the venue itself
     best=None
     for h in fire_hotspots:
-        m=min(haversine_km(h['lat'],h['lon'],clat,clon) for clon,clat in coords)
+        fire_dist_from_venue=haversine_km(h['lat'],h['lon'],vlat,vlon)
+        # Only count path points that have travelled at least as far from the
+        # venue as the fire itself sits. Without this, a fire that merely
+        # happens to be near the venue - in any direction, including the
+        # opposite direction from where the trajectory actually heads -
+        # trivially "passes near" the path's own starting point, producing a
+        # false "smoke transport plausible" match (e.g. air arriving from the
+        # S reported as plausibly carrying smoke from a fire to the NE).
+        candidates=[(clat,clon) for clon,clat in coords if haversine_km(vlat,vlon,clat,clon)>=fire_dist_from_venue]
+        if not candidates:continue
+        m=min(haversine_km(h['lat'],h['lon'],clat,clon) for clat,clon in candidates)
         if best is None or m<best[0]:best=(m,h)
     if best is None:return None
     dist,hotspot=best
