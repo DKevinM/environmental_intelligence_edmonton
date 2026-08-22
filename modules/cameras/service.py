@@ -1,4 +1,4 @@
-import hashlib,json,time
+import hashlib,json,os,time
 import requests
 from core.config import ROOT
 from core.geometry import haversine_km,bearing_deg,compass
@@ -18,8 +18,10 @@ def load_nearby_cameras(cfg):
     base=cc.get('base_url','https://511.alberta.ca/api/v2/get/cameras'); radius_km=float(cc.get('radius_km',15)); max_cameras=int(cc.get('max_cameras',4))
     candidate_pool=int(cc.get('candidate_pool',10)); stale_after_hours=float(cc.get('stale_after_hours',2)); timeout=float(cc.get('timeout_seconds',20))
     e=cfg['event']; lat,lon=float(e['latitude']),float(e['longitude'])
+    key=os.environ.get('AB511_API_KEY')
+    if not key:return {'status':'missing','reason':'AB511_API_KEY not set in environment'}
     try:
-        r=requests.get(base,params={'format':'json'},timeout=timeout); r.raise_for_status()
+        r=requests.get(base,params={'format':'json','key':key},timeout=timeout); r.raise_for_status()
         rows=r.json()
     except Exception as ex:
         return {'status':'error','error':f'{type(ex).__name__}: {ex}'}
