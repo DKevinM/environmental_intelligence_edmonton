@@ -37,7 +37,7 @@ MAP_JS='''(function(){
   var lightningLayer=L.tileLayer.wms('https://geo.weather.gc.ca/geomet/?lang=en',{layers:'Lightning_2.5km_Density',format:'image/png',transparent:true,opacity:0.85});
   var venueMarker=L.circleMarker([VENUE.lat,VENUE.lon],{radius:10,color:'#fff',weight:3,fillColor:'#4dabf7',fillOpacity:1}).bindPopup('<b>'+VENUE.name+'</b>'+(VENUE.wind?('<br>Wind: '+VENUE.wind):''));
   smokeLayer.addTo(map);paLayer.addTo(map);stationLayer.addTo(map);fireLayer.addTo(map);venueMarker.addTo(map);
-  L.control.layers(null,{'AQHI grid':aqhiLayer,'Smoke (PM2.5 model)':smokeLayer,'Community sensors':paLayer,'Air Quality Stations':stationLayer,'Active fires (NASA FIRMS)':fireLayer,'Radar':radarLayer,'Lightning':lightningLayer,'Wind trajectory density (zooms out)':trajDensityLayer,'Wind back-trajectory (zooms out)':trajLineLayer},{collapsed:false}).addTo(map);
+  L.control.layers(null,{'AQHI grid':aqhiLayer,'Smoke (PM2.5 model)':smokeLayer,'Community sensors':paLayer,'Air Quality Stations':stationLayer,'Active fires (NASA FIRMS)':fireLayer,'Radar':radarLayer,'Lightning':lightningLayer,'Wind trajectory density (zooms out)':trajDensityLayer,'Wind back-trajectory (zooms out)':trajLineLayer},{collapsed:true}).addTo(map);
   map.on('overlayadd',function(ev){
     if(ev.name.indexOf('zooms out')===-1)return;
     var b=(TRAJ_CENTERLINES.features&&TRAJ_CENTERLINES.features.length)?trajLineLayer.getBounds():null;
