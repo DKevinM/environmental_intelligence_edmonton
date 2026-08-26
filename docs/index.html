@@ -9,7 +9,7 @@ const TRAJ_HOURS=6.0;
 const VENUE={"name": "Edmonton Folk Music Festival", "lat": 53.5352, "lon": -113.4787, "wind": "4.2 km/h from the W (toward the E)"};
 (function(){
   var map=L.map('festmap',{scrollWheelZoom:false}).setView([VENUE.lat,VENUE.lon],13);
-  var osmLayer=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors',maxZoom:19}).addTo(map);
+  var osmLayer=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors',maxZoom:19}).addTo(map);var cartoLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=cb1_2828_1_73d52146a6fce9f2b27269cb',{attribution:'&copy; OpenStreetMap contributors &copy; CARTO',subdomains:'abcd',maxZoom:20});
   function colorForPM25(x){if(x==null)return '#6c757d';if(x<12)return '#2f9e44';if(x<35.4)return '#e0a800';if(x<55.4)return '#e8590c';if(x<150.4)return '#c92a2a';if(x<250.4)return '#862e9c';return '#5c0000';}
   function colorForAQHI(x){if(x==null)return '#6c757d';if(x<=3)return '#2f9e44';if(x<=6)return '#e0a800';if(x<=10)return '#e8590c';return '#c92a2a';}
   function capAQHI(x){if(x==null)return 'n/a';var n=(typeof x==='number')?x:parseFloat(x);return (!isNaN(n)&&n>10)?'10+':x;}
@@ -23,7 +23,7 @@ const VENUE={"name": "Edmonton Folk Music Festival", "lat": 53.5352, "lon": -113
   var trajLineLayer=L.geoJSON(TRAJ_CENTERLINES,{style:function(){return {color:'#ade8f4',weight:2,dashArray:'6,4'};},onEachFeature:function(f,l){l.bindPopup('Back-trajectory (release height '+(f.properties.z0_m!=null?f.properties.z0_m:'?')+' m)<br>'+(TRAJ_HOURS!=null?TRAJ_HOURS+' h lookback':''));}});
   var venueMarker=L.circleMarker([VENUE.lat,VENUE.lon],{radius:10,color:'#fff',weight:3,fillColor:'#4dabf7',fillOpacity:1}).bindPopup('<b>'+VENUE.name+'</b>'+(VENUE.wind?('<br>Wind: '+VENUE.wind):''));
   smokeLayer.addTo(map);paLayer.addTo(map);stationLayer.addTo(map);fireLayer.addTo(map);venueMarker.addTo(map);
-  L.control.layers({'Light':osmLayer},{'AQHI grid':aqhiLayer,'Smoke (PM2.5 model)':smokeLayer,'Community sensors':paLayer,'Official stations':stationLayer,'Active fires (NASA FIRMS)':fireLayer,'Wind trajectory density (zooms out)':trajDensityLayer,'Wind back-trajectory (zooms out)':trajLineLayer},{collapsed:false}).addTo(map);
+  L.control.layers({'Light':osmLayer,'Dark':cartoLayer},{'AQHI grid':aqhiLayer,'Smoke (PM2.5 model)':smokeLayer,'Community sensors':paLayer,'Official stations':stationLayer,'Active fires (NASA FIRMS)':fireLayer,'Wind trajectory density (zooms out)':trajDensityLayer,'Wind back-trajectory (zooms out)':trajLineLayer},{collapsed:false}).addTo(map);
   map.on('overlayadd',function(ev){
     if(ev.name.indexOf('zooms out')===-1)return;
     var b=(TRAJ_CENTERLINES.features&&TRAJ_CENTERLINES.features.length)?trajLineLayer.getBounds():null;
