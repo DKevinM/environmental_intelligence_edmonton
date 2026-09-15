@@ -9,7 +9,7 @@ def sensor_label(source):
 def build(cfg,w,aq,fx,a,fire=None,trajectory=None,wx_alerts=None):
  c=w['current']; m=a['weather_metrics']; h=a['hazards']; parts=[f"At {cfg['event']['name']}, temperature is {f(c.get('temperature_c'),1)}°C and feels near {f(c.get('apparent_temperature_c'),1)}°C. Winds are {f(c.get('wind_speed_kmh'))} km/h from {compass(c.get('wind_direction_deg'))}, gusting near {f(c.get('wind_gust_kmh'))} km/h."]
  wx=(wx_alerts or {}).get('alerts') or []
- if wx:parts.append(f"Environment Canada has {len(wx)} active alert(s) in effect for the venue: {', '.join(sorted(set(x['name'] for x in wx)))}.")
+ if wx:parts.append(f"ECCC has {len(wx)} active alert(s) in effect for the venue: {', '.join(sorted(set(x['name'] for x in wx)))}.")
  tz=cfg['project'].get('timezone','America/Edmonton')
  parts.append(f"The nearest current AQHI is {faqhi(aq.get('aqhi'))} at {aq.get('station_name','the nearest point')}, {f(aq.get('distance_km'),1)} km from the venue." if aq.get('aqhi') is not None else 'A valid current AQHI was not available.')
  official=aq.get('official') or {}
@@ -54,10 +54,10 @@ def build(cfg,w,aq,fx,a,fire=None,trajectory=None,wx_alerts=None):
  if h['precipitation']['risk'] in ('HIGH','EXTREME'):rec.append('Prepare drainage, electrical protection and wet-weather controls.')
  if h['wind_shear']['risk'] in ('HIGH','EXTREME'):rec.append('Surface and upper-level winds are diverging sharply — expect smoke/plume transport direction to differ from surface wind and reassess more frequently.')
  if h['aqhi_rate_of_change']['risk'] in ('HIGH','EXTREME'):rec.append('AQHI is rising quickly — conditions may be worse than the current reading by the next set change; recheck shortly before proceeding with outdoor activity decisions.')
- if wx:rec.append(f"Active Environment Canada alert(s) for the venue — review details: {', '.join(sorted(set(x['name'] for x in wx)))}.")
+ if wx:rec.append(f"Active ECCC alert(s) for the venue — review details: {', '.join(sorted(set(x['name'] for x in wx)))}.")
  aqmsg=eccc_messages(h['air_quality']['risk'])
  if aqmsg:
-  rec.append(f"Environment Canada AQHI guidance — general population: {aqmsg['general']}")
-  rec.append(f"Environment Canada AQHI guidance — at-risk populations: {aqmsg['at_risk']}")
+  rec.append(f"ECCC AQHI guidance — general population: {aqmsg['general']}")
+  rec.append(f"ECCC AQHI guidance — at-risk populations: {aqmsg['at_risk']}")
  if not rec:rec=['Continue routine monitoring and rerun as new observations arrive.']
  return {'headline':headline,'summary':' '.join(parts),'summary_points':parts,'recommendations':rec}

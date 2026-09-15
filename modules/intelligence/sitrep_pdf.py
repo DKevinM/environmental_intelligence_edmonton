@@ -74,9 +74,9 @@ def render_html(cfg, p, contact):
     wx_alerts = (p.get('wx_alerts') or {}).get('alerts') or []
     if wx_alerts:
         wx_html = ''.join(f"<div class='alert'><b>{x.get('name', '').title()}</b> — {x.get('region', '')}</div>" for x in wx_alerts)
-        wx_section = f"<section class='panel alertbox'><h2>Active Environment Canada Alerts</h2>{wx_html}</section>"
+        wx_section = f"<section class='panel alertbox'><h2>Active ECCC Alerts</h2>{wx_html}</section>"
     else:
-        wx_section = "<section class='panel okbox'><p>No active Environment Canada weather alerts for the venue.</p></section>"
+        wx_section = "<section class='panel okbox'><p>No active ECCC weather alerts for the venue.</p></section>"
 
     valid_label = format_short(fx.get('valid_at'), tz) or '+3h forecast'
 

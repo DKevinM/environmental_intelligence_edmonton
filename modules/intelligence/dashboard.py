@@ -77,11 +77,11 @@ def build_html(cfg,p):
  wx_status=(p.get('wx_alerts') or {}).get('status')
  wx=((p.get('wx_alerts') or {}).get('alerts')) or []
  if wx:
-  wx_section=('<section class="panel" style="border-color:#e8590c"><h2>Active Environment Canada alerts</h2>'+''.join(f"<article style='margin-bottom:12px'><b>{escape(x.get('name') or '').title()}</b> — {escape(x.get('region') or '')}<div style='white-space:pre-wrap;font-size:14px;color:#c9d4de;margin-top:6px'>{escape((x.get('text') or '')[:600])}{'…' if len(x.get('text') or '')>600 else ''}</div></article>" for x in wx)+'</section>')
+  wx_section=('<section class="panel" style="border-color:#e8590c"><h2>Active ECCC alerts</h2>'+''.join(f"<article style='margin-bottom:12px'><b>{escape(x.get('name') or '').title()}</b> — {escape(x.get('region') or '')}<div style='white-space:pre-wrap;font-size:14px;color:#c9d4de;margin-top:6px'>{escape((x.get('text') or '')[:600])}{'…' if len(x.get('text') or '')>600 else ''}</div></article>" for x in wx)+'</section>')
  elif wx_status=='ok':
-  wx_section='<section class="panel" style="border-color:#2f9e44"><p style="margin:0">✓ No active Environment Canada weather alerts for the venue.</p></section>'
+  wx_section='<section class="panel" style="border-color:#2f9e44"><p style="margin:0">✓ No active ECCC weather alerts for the venue.</p></section>'
  else:
-  wx_section=f'<section class="panel" style="border-color:#e0a800"><p style="margin:0">⚠ Could not retrieve Environment Canada weather alerts{" (" + escape(str((p.get("wx_alerts") or {}).get("error"))) + ")" if (p.get("wx_alerts") or {}).get("error") else ""} — check manually before relying on this report.</p></section>'
+  wx_section=f'<section class="panel" style="border-color:#e0a800"><p style="margin:0">⚠ Could not retrieve ECCC weather alerts{" (" + escape(str((p.get("wx_alerts") or {}).get("error"))) + ")" if (p.get("wx_alerts") or {}).get("error") else ""} — check manually before relying on this report.</p></section>'
  cards=''.join(f"<article class='hazard {R.get(x['risk'],'unknown')}'><small>{HAZARD_LABELS.get(k,k.replace('_',' ').title())}</small><b>{x['risk']}</b><span>{_hazard_value_html(k,x)}</span>{_trend_html(trend.get(k),x.get('unit',''))}</article>" for k,x in a['hazards'].items())
  rows=''.join(f"<tr><td>{v(format_short(r.get('time'),tz))}</td><td>{v(r.get('temperature_c'),'°C')}</td><td>{v(r.get('precipitation_probability_pct'),'%')}</td><td>{v(r.get('precipitation_mm'),' mm')}</td><td>{v(r.get('wind_gust_kmh'),' km/h')}</td><td>{v(weather_label(r.get('weather_code')))}</td></tr>" for r in w.get('hourly',[])[:12])
  smoke_note=''

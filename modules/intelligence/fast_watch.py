@@ -1,6 +1,6 @@
 """Fast, cheap severe-weather checks meant to run every minute — separate
 from the full run_demo.py pipeline (which is too slow for that cadence).
-Pulls from Environment Canada's public GeoMet WMS: the same Canadian
+Pulls from ECCC's public GeoMet WMS: the same Canadian
 Lightning Detection Network and radar composite data a meteorologist
 would actually watch, not something inferred from hourly forecast codes.
 """
@@ -38,7 +38,7 @@ def check_lightning(cfg, radius_km=40):
     e = cfg['event']
     try:
         km = _nearest_echo_km(float(e['latitude']), float(e['longitude']), 'Lightning_2.5km_Density', radius_km)
-        return {'status': 'ok', 'nearest_km': round(km, 1) if km is not None else None, 'source': 'Environment Canada CLDN (10 min density grid)'}
+        return {'status': 'ok', 'nearest_km': round(km, 1) if km is not None else None, 'source': 'ECCC CLDN (10 min density grid)'}
     except Exception as ex:
         return {'status': 'error', 'error': f'{type(ex).__name__}: {ex}'}
 
@@ -47,6 +47,6 @@ def check_radar_echo(cfg, radius_km=40):
     e = cfg['event']
     try:
         km = _nearest_echo_km(float(e['latitude']), float(e['longitude']), 'RADAR_1KM_RRAI', radius_km)
-        return {'status': 'ok', 'nearest_km': round(km, 1) if km is not None else None, 'source': 'Environment Canada composite radar'}
+        return {'status': 'ok', 'nearest_km': round(km, 1) if km is not None else None, 'source': 'ECCC composite radar'}
     except Exception as ex:
         return {'status': 'error', 'error': f'{type(ex).__name__}: {ex}'}
