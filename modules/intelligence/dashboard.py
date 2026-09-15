@@ -117,7 +117,7 @@ def build_html(cfg,p):
     el.innerHTML='<div class="grid hazards">'
       +'<article class="hazard '+bandClass+'"><small>Lightning</small><b>'+d.lightning.band+'</b><span>'+lightningVal+' from venue</span></article>'
       +'<article class="hazard '+radarClass+'"><small>Radar echo</small><b>'+radarBig+'</b><span>'+radarSmall+'</span></article>'
-      +'<article class="hazard '+(alertCount?'high':'low')+'"><small>Active EC alerts</small><b>'+alertCount+'</b><span>'+alertNames+'</span></article>'
+      +'<article class="hazard '+(alertCount?'high':'low')+'"><small>Active ECCC alerts</small><b>'+alertCount+'</b><span>'+alertNames+'</span></article>'
       +'</div><p style="font-size:12px;color:#9fb0bf;margin:8px 0 0">Checked '+checked+' local time — refreshes automatically every 30s while this page is open.</p>';
   }
   function load(){

@@ -2,7 +2,7 @@
 run_demo.py, which is too slow (weasyprint, Playwright, wind trajectory
 modeling) for that cadence. Only checks the handful of signals that can
 change meaningfully minute-to-minute: lightning proximity, radar echo,
-and Environment Canada severe weather alerts. Alerts only on NEW or
+and ECCC severe weather alerts. Alerts only on NEW or
 escalating conditions, not on steady-state, to avoid spamming the log.
 """
 import json
@@ -107,10 +107,10 @@ def main():
     prev_alert_names = set(prev.get('alert_names', []))
     for name in current_alert_names:
         if name not in prev_alert_names:
-            alerts_fired.append(f"new Environment Canada alert: {name}")
+            alerts_fired.append(f"new ECCC alert: {name}")
     for name in prev_alert_names:
         if name not in current_alert_names:
-            alerts_fired.append(f"Environment Canada alert cleared: {name}")
+            alerts_fired.append(f"ECCC alert cleared: {name}")
 
     for msg in alerts_fired:
         log_alert(msg)
@@ -121,7 +121,7 @@ def main():
         f'Checked {now}\n'
         f'Lightning: {new_band} ({lightning.get("nearest_km")} km from venue)\n'
         f'Radar echo: {radar_note}\n'
-        f'Active EC alerts: {", ".join(current_alert_names) or "none"}\n'
+        f'Active ECCC alerts: {", ".join(current_alert_names) or "none"}\n'
     )
 
     # Always write fresh — this file is served in real time via the
