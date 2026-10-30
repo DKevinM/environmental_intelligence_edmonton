@@ -59,7 +59,7 @@ wind_trajectory:
   ab_winds_dir: "/opt/airquality/github/AB_winds"
   python_bin: "/opt/airquality/venv/bin/python3"
   hours: 6
-  timeout_seconds: 240
+  timeout_seconds: 600
   fire_path_threshold_km: 20
 
 wind_shear:
