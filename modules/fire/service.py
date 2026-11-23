@@ -1,6 +1,7 @@
 import os,csv,io,requests
 from core.geometry import haversine_km,bearing_deg,compass
 CONF_MAP={'l':0.3,'n':0.6,'h':0.9}
+DEFAULT_SOURCES='VIIRS_NOAA20_NRT,VIIRS_NOAA21_NRT,VIIRS_SNPP_NRT'
 def num(v):
     try:return float(v)
     except:return None
@@ -18,14 +19,22 @@ def load_hotspots(cfg):
     if not key:return {'status':'missing','reason':'FIRMS_API_KEY not set in environment'}
     e=cfg['event']; lat,lon=float(e['latitude']),float(e['longitude'])
     radius_km=float(fc.get('radius_km',300)); cluster_km=float(fc.get('cluster_km',10)); min_conf=float(fc.get('min_confidence',0.30))
-    base=fc.get('base_url','https://firms.modaps.eosdis.nasa.gov'); source=fc.get('source','VIIRS_SNPP_NRT'); day_range=int(fc.get('day_range',2))
+    base=fc.get('base_url','https://firms.modaps.eosdis.nasa.gov'); day_range=int(fc.get('day_range',2))
+    # Suomi NPP stopped sending 2026-11-03 (last detections Nov 2); NOAA-20 and NOAA-21 carry the same VIIRS sensor.
+    # 'source' is one name or a comma list; one satellite failing doesn't blank the others (10 km clustering merges repeats)
+    src=fc.get('source') or DEFAULT_SOURCES
+    sources=[x.strip() for x in (src.split(',') if isinstance(src,str) else src) if x.strip()]
     w,s,eas,n=bbox_for(lat,lon,radius_km)
-    url=f"{base}/api/area/csv/{key}/{source}/{w:.4f},{s:.4f},{eas:.4f},{n:.4f}/{day_range}"
-    try:
-        r=requests.get(url,timeout=float(fc.get('timeout_seconds',20))); r.raise_for_status()
-        rows=list(csv.DictReader(io.StringIO(r.text)))
-    except Exception as ex:
-        return {'status':'error','error':f'{type(ex).__name__}: {ex}'}
+    rows,errs=[],[]
+    for source in sources:
+        url=f"{base}/api/area/csv/{key}/{source}/{w:.4f},{s:.4f},{eas:.4f},{n:.4f}/{day_range}"
+        try:
+            r=requests.get(url,timeout=float(fc.get('timeout_seconds',20))); r.raise_for_status()
+            rows+=list(csv.DictReader(io.StringIO(r.text)))
+        except Exception as ex:
+            errs.append(f'{source}: {type(ex).__name__}: {ex}')
+    if len(errs)==len(sources):
+        return {'status':'error','error':'; '.join(errs)}
     cand=[]
     for row in rows:
         rlat,rlon=num(row.get('latitude')),num(row.get('longitude'))

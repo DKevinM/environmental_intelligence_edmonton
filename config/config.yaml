@@ -42,7 +42,7 @@ map:
 # never committed here - this repo is public.
 firms:
   base_url: "https://firms.modaps.eosdis.nasa.gov"
-  source: "VIIRS_SNPP_NRT"
+  source: "VIIRS_NOAA20_NRT,VIIRS_NOAA21_NRT,VIIRS_SNPP_NRT"   # SNPP dark since 2026-11-03
   radius_km: 300
   cluster_km: 10
   min_confidence: 0.30
